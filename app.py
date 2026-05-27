@@ -167,7 +167,7 @@ HOVER = (
     "Time window: %{customdata[2]} y<br>"
     "N in stratum: %{customdata[11]}<br>"
     "HR = %{customdata[4]:.2f} (95% CI %{customdata[5]:.2f}-%{customdata[6]:.2f})<br>"
-    "q = %{customdata[7]:.2e}<br>"
+    "p = %{customdata[14]:.2e} | q (FDR) = %{customdata[7]:.2e}<br>"
     "Events - cases: %{customdata[8]} | controls: %{customdata[9]}"
     "<extra></extra>"
 )
@@ -191,6 +191,7 @@ def _customdata(sub):
         fmt_n(sub["n_total"]),            # 11
         age_disp,                         # 12  display
         sex_disp,                         # 13  display
+        sub["p_val"],                     # 14
     ], axis=-1)
 
 
@@ -317,7 +318,7 @@ def make_forest(shortlist):
         f"Time window: {r['time_window']} y<br>"
         f"N in stratum: {r.get('n_total', '?')}<br>"
         f"HR = {r['HR']:.2f} (95% CI {r['HR_lo95']:.2f}-{r['HR_hi95']:.2f})<br>"
-        f"q = {r['q_val_global']:.2e}<br>"
+        f"p = {r.get('p_val', float('nan')):.2e} | q (FDR) = {r['q_val_global']:.2e}<br>"
         f"Events - cases: {r['n_events_case']} | controls: {r['n_events_crtl']}"
         for r in items
     ]
@@ -588,7 +589,9 @@ main = html.Div([
                  "type": "numeric", "format": {"specifier": ".2f"}},
                 {"name": "95% CI high",    "id": "HR_hi95",
                  "type": "numeric", "format": {"specifier": ".2f"}},
-                {"name": "q",              "id": "q_val_global",
+                {"name": "p",              "id": "p_val",
+                 "type": "numeric", "format": {"specifier": ".2e"}},
+                {"name": "q (FDR)",        "id": "q_val_global",
                  "type": "numeric", "format": {"specifier": ".2e"}},
                 {"name": "Events - cases", "id": "n_events_case"},
                 {"name": "Events - ctrl",  "id": "n_events_crtl"},
@@ -741,6 +744,7 @@ def update_shortlist(click_data, select_data, prev_rows, n_clear,
                 "n_events_case": str(cd[8]), "n_events_crtl": str(cd[9]),
                 "icd10_name": str(cd[10]),
                 "n_total": str(cd[11]) if len(cd) >= 12 else "?",
+                "p_val": float(cd[14]) if len(cd) >= 15 else float("nan"),
                 "chapter_label": chapter_label_plain(icd10_to_chapter(str(cd[0]))),
             })
 
