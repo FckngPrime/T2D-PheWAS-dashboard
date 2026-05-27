@@ -10,9 +10,8 @@ from plotly.subplots import make_subplots
 from dash import (Dash, dcc, html, dash_table,
                   Input, Output, State, no_update, callback_context)
 
-SCRIPT_DIR       = Path(__file__).parent
-DATA_PATH        = SCRIPT_DIR / "final_results.parquet"
-ICD10_NAMES_PATH = SCRIPT_DIR / "icd102019syst_codes.txt"
+DATA_PATH       = Path("final_results.parquet")
+ICD10_NAMES_PATH = Path("icd102019syst_codes.txt")
 Q_SIGNIFICANT   = 0.05
 EPS_QVAL        = 1e-300
 
@@ -158,10 +157,13 @@ df.head()
 SEX_HOVER = {"alle": "Both", "maend": "Men", "kvinder": "Women"}
 AGE_HOVER = {"alle": "All ages"}
 
+# Raw values live at positions 1 (age) and 3 (sex) so the shortlist
+# callback can read them and look them up in SEX_SYMBOLS etc.
+# Display strings live at 12 (age) and 13 (sex) and are only used in HOVER.
 HOVER = (
     "<b>%{customdata[0]}</b> - %{customdata[10]}<br>"
     "Chapter: %{text}<br>"
-    "Age group: %{customdata[1]} | Sex: %{customdata[3]} | "
+    "Age group: %{customdata[12]} | Sex: %{customdata[13]} | "
     "Time window: %{customdata[2]} y<br>"
     "N in stratum: %{customdata[11]}<br>"
     "HR = %{customdata[4]:.2f} (95% CI %{customdata[5]:.2f}-%{customdata[6]:.2f})<br>"
@@ -178,15 +180,17 @@ def _customdata(sub):
     sex_disp = sub["sex"].astype(str).map(lambda s: SEX_HOVER.get(s, s))
     return np.stack([
         sub["icd10"].astype(str),         # 0
-        age_disp,                         # 1
+        sub["age_group"].astype(str),     # 1   raw
         sub["time_window"].astype(str),   # 2
-        sex_disp,                         # 3
+        sub["sex"].astype(str),           # 3   raw
         sub["HR"], sub["HR_lo95"], sub["HR_hi95"],   # 4, 5, 6
         sub["q_val_global"],              # 7
         fmt(sub["n_events_case"]),        # 8
         fmt(sub["n_events_crtl"]),        # 9
         sub["icd10_name"].astype(str),    # 10
         fmt_n(sub["n_total"]),            # 11
+        age_disp,                         # 12  display
+        sex_disp,                         # 13  display
     ], axis=-1)
 
 
